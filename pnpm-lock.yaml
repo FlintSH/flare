@@ -177,8 +177,8 @@ importers:
         specifier: ^0.525.0
         version: 0.525.0(react@18.3.1)
       nanoid:
-        specifier: ^5.1.5
-        version: 5.1.5
+        specifier: ^5.1.16
+        version: 5.1.16
       next:
         specifier: ^15.5.21
         version: 15.5.21(@types/node@20.19.17)(babel-plugin-react-compiler@19.0.0-beta-ebf51a3-20250411)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3303,8 +3303,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanoid@5.1.5:
-    resolution: {integrity: sha512-Ir/+ZpE9fDsNH0hQ3C68uyThDXzYcim2EqcZ8zn8Chtt1iylPT9xXJB0kPCnqzgcEGikO9RxSrh63MsmVCU7Fw==}
+  nanoid@5.1.16:
+    resolution: {integrity: sha512-kVrnsrJqMR8+oLJnGEmSWw9BivK5mt7H3FZatVRjrc5wGqFYuBxX1yG7+A7Gi5AefkX6t/oCkizcQgpu0cY1dQ==}
     engines: {node: ^18 || >=20}
     hasBin: true
 
@@ -7751,7 +7751,7 @@ snapshots:
 
   nanoid@3.3.16: {}
 
-  nanoid@5.1.5: {}
+  nanoid@5.1.16: {}
 
   napi-postinstall@0.3.3: {}
 
