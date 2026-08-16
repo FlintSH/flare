@@ -42,7 +42,11 @@ export function LoginForm({
 
   async function onOidcSignIn() {
     setIsOidcLoading(true)
-    await signIn('oidc', { callbackUrl: '/dashboard' })
+    try {
+      await signIn('oidc', { callbackUrl: '/dashboard' })
+    } catch {
+      setIsOidcLoading(false)
+    }
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
