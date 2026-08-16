@@ -1382,43 +1382,40 @@ export default function SettingsPage() {
                         </div>
                       </div>
 
-                      {workingConfig.settings.general.oidc.allowLinking && (
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-0.5">
-                            <Label>Require Verified Email</Label>
-                            <p className="text-sm text-muted-foreground">
-                              Only link to an existing account if the provider
-                              confirms the email is verified. Disable only if
-                              you trust all accounts that may register with your
-                              provider.
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {isFieldChanged('general', [
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Require Verified Email</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Require ODIC provider to confirm user email is
+                            verified. Disable only if you trust all accounts
+                            that may register with your provider.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isFieldChanged('general', [
+                            'oidc',
+                            'requireEmailVerified',
+                          ]) && <ChangeIndicator />}
+                          <Switch
+                            checked={
+                              workingConfig.settings.general.oidc
+                                .requireEmailVerified
+                            }
+                            onCheckedChange={(checked) =>
+                              handleSettingChange('general', {
+                                oidc: {
+                                  ...workingConfig.settings.general.oidc,
+                                  requireEmailVerified: checked,
+                                },
+                              })
+                            }
+                            className={getFieldClasses('general', [
                               'oidc',
                               'requireEmailVerified',
-                            ]) && <ChangeIndicator />}
-                            <Switch
-                              checked={
-                                workingConfig.settings.general.oidc
-                                  .requireEmailVerified
-                              }
-                              onCheckedChange={(checked) =>
-                                handleSettingChange('general', {
-                                  oidc: {
-                                    ...workingConfig.settings.general.oidc,
-                                    requireEmailVerified: checked,
-                                  },
-                                })
-                              }
-                              className={getFieldClasses('general', [
-                                'oidc',
-                                'requireEmailVerified',
-                              ])}
-                            />
-                          </div>
+                            ])}
+                          />
                         </div>
-                      )}
+                      </div>
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
