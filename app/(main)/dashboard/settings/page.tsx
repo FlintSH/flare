@@ -1177,7 +1177,7 @@ export default function SettingsPage() {
                     <div className="space-y-0.5">
                       <Label>Enable OIDC Sign-In</Label>
                       <p className="text-sm text-muted-foreground">
-                        Enable or disable single sign-on with ODIC
+                        Enable or disable single sign-on with OIDC
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1386,7 +1386,7 @@ export default function SettingsPage() {
                         <div className="space-y-0.5">
                           <Label>Require Verified Email</Label>
                           <p className="text-sm text-muted-foreground">
-                            Require ODIC provider to confirm user email is
+                            Require OIDC provider to confirm user email is
                             verified. Disable only if you trust all accounts
                             that may register with your provider.
                           </p>
