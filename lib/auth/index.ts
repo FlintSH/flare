@@ -108,10 +108,17 @@ export const authOptions: NextAuthOptions = {
       }
 
       const config = await getConfig()
-      const result = await resolveOidcUser(profile as OidcProfile, {
-        autoProvision: config.settings.general.oidc.autoProvision,
-        allowLinking: config.settings.general.oidc.allowLinking,
-        requireEmailVerified: config.settings.general.oidc.requireEmailVerified,
+      const oidcConfig = config.settings.general.oidc
+      const rawProfile = profile as OidcProfile
+      const scopedProfile: OidcProfile = {
+        ...rawProfile,
+        sub: scopeOidcSubject(oidcConfig.issuer, rawProfile.sub),
+      }
+
+      const result = await resolveOidcUser(scopedProfile, {
+        autoProvision: oidcConfig.autoProvision,
+        allowLinking: oidcConfig.allowLinking,
+        requireEmailVerified: oidcConfig.requireEmailVerified,
       })
 
       if (!result.ok) {
@@ -183,6 +190,14 @@ function trimTrailingSlashes(value: string) {
     end -= 1
   }
   return value.slice(0, end)
+}
+
+/**
+ * OIDC `sub` is only unique within its issuer, not globally, so it must be
+ * scoped before being used as a global lookup key (see oidcSubject on User).
+ */
+function scopeOidcSubject(issuer: string, sub: string): string {
+  return `${trimTrailingSlashes(issuer)}|${sub}`
 }
 
 interface OidcRawProfile extends Record<string, unknown> {
