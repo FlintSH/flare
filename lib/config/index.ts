@@ -62,6 +62,17 @@ export const configSchema = z.object({
       ocr: z.object({
         enabled: z.boolean().default(true),
       }),
+      oidc: z.object({
+        enabled: z.boolean().default(false),
+        issuer: z.string().default(''),
+        clientId: z.string().default(''),
+        clientSecret: z.string().default(''),
+        buttonText: z.string().default('Sign in with SSO'),
+        autoProvision: z.boolean().default(true),
+        allowLinking: z.boolean().default(true),
+        requireEmailVerified: z.boolean().default(true),
+        enforceSso: z.boolean().default(false),
+      }),
     }),
     appearance: z.object({
       theme: z.string(),
@@ -116,6 +127,17 @@ export const DEFAULT_CONFIG: FlareConfig = {
       },
       ocr: {
         enabled: true,
+      },
+      oidc: {
+        enabled: false,
+        issuer: '',
+        clientId: '',
+        clientSecret: '',
+        buttonText: 'Sign in with SSO',
+        autoProvision: true,
+        allowLinking: true,
+        requireEmailVerified: true,
+        enforceSso: false,
       },
     },
     appearance: {
@@ -240,6 +262,10 @@ export async function updateConfig(
           ocr: {
             ...currentConfig.settings.general.ocr,
             ...(newConfig.settings?.general?.ocr || {}),
+          },
+          oidc: {
+            ...currentConfig.settings.general.oidc,
+            ...(newConfig.settings?.general?.oidc || {}),
           },
         },
         appearance: {

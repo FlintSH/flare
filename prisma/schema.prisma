@@ -19,6 +19,7 @@ model User {
   updatedAt                   DateTime       @updatedAt
   storageUsed                 Float          @default(0)
   sessionVersion              Int            @default(1)
+  oidcSubject                 String?        @unique
   vanityId                    String?        @unique
   urlId                       String         @unique
   uploadToken                 String         @unique

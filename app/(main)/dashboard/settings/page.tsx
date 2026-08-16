@@ -1166,6 +1166,300 @@ export default function SettingsPage() {
 
               <Card>
                 <CardHeader>
+                  <CardTitle>Single Sign-On (OIDC)</CardTitle>
+                  <CardDescription>
+                    Let users sign in through an external OpenID Connect
+                    identity provider
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Enable OIDC Sign-In</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Enable or disable single sign-on with ODIC
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isFieldChanged('general', ['oidc', 'enabled']) && (
+                        <ChangeIndicator />
+                      )}
+                      <Switch
+                        checked={workingConfig.settings.general.oidc.enabled}
+                        onCheckedChange={(checked) =>
+                          handleSettingChange('general', {
+                            oidc: {
+                              ...workingConfig.settings.general.oidc,
+                              enabled: checked,
+                            },
+                          })
+                        }
+                        className={getFieldClasses('general', [
+                          'oidc',
+                          'enabled',
+                        ])}
+                      />
+                    </div>
+                  </div>
+
+                  {workingConfig.settings.general.oidc.enabled && (
+                    <div className="space-y-4 border rounded-lg p-4">
+                      <div className="space-y-2">
+                        <Label>Issuer URL</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={workingConfig.settings.general.oidc.issuer}
+                            onChange={(e) =>
+                              handleSettingChange('general', {
+                                oidc: {
+                                  ...workingConfig.settings.general.oidc,
+                                  issuer: e.target.value,
+                                },
+                              })
+                            }
+                            placeholder="https://idp.example.com"
+                            className={getFieldClasses('general', [
+                              'oidc',
+                              'issuer',
+                            ])}
+                          />
+                          {isFieldChanged('general', ['oidc', 'issuer']) && (
+                            <ChangeIndicator />
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Flare discovers the provider&apos;s endpoints from{' '}
+                          <code>
+                            {'{issuer}'}/.well-known/openid-configuration
+                          </code>
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Client ID</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={workingConfig.settings.general.oidc.clientId}
+                            onChange={(e) =>
+                              handleSettingChange('general', {
+                                oidc: {
+                                  ...workingConfig.settings.general.oidc,
+                                  clientId: e.target.value,
+                                },
+                              })
+                            }
+                            className={getFieldClasses('general', [
+                              'oidc',
+                              'clientId',
+                            ])}
+                          />
+                          {isFieldChanged('general', ['oidc', 'clientId']) && (
+                            <ChangeIndicator />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Client Secret</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="password"
+                            value={
+                              workingConfig.settings.general.oidc.clientSecret
+                            }
+                            onChange={(e) =>
+                              handleSettingChange('general', {
+                                oidc: {
+                                  ...workingConfig.settings.general.oidc,
+                                  clientSecret: e.target.value,
+                                },
+                              })
+                            }
+                            className={getFieldClasses('general', [
+                              'oidc',
+                              'clientSecret',
+                            ])}
+                          />
+                          {isFieldChanged('general', [
+                            'oidc',
+                            'clientSecret',
+                          ]) && <ChangeIndicator />}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Sign-In Button Text</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={
+                              workingConfig.settings.general.oidc.buttonText
+                            }
+                            onChange={(e) =>
+                              handleSettingChange('general', {
+                                oidc: {
+                                  ...workingConfig.settings.general.oidc,
+                                  buttonText: e.target.value,
+                                },
+                              })
+                            }
+                            placeholder="Sign in with SSO"
+                            className={getFieldClasses('general', [
+                              'oidc',
+                              'buttonText',
+                            ])}
+                          />
+                          {isFieldChanged('general', [
+                            'oidc',
+                            'buttonText',
+                          ]) && <ChangeIndicator />}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Auto-Provision Users</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Create a new account automatically the first time
+                            someone signs in through the provider
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isFieldChanged('general', [
+                            'oidc',
+                            'autoProvision',
+                          ]) && <ChangeIndicator />}
+                          <Switch
+                            checked={
+                              workingConfig.settings.general.oidc.autoProvision
+                            }
+                            onCheckedChange={(checked) =>
+                              handleSettingChange('general', {
+                                oidc: {
+                                  ...workingConfig.settings.general.oidc,
+                                  autoProvision: checked,
+                                },
+                              })
+                            }
+                            className={getFieldClasses('general', [
+                              'oidc',
+                              'autoProvision',
+                            ])}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Link Existing Accounts</Label>
+                          <p className="text-sm text-muted-foreground">
+                            If the provider&apos;s email matches an existing
+                            local account, sign in as that account instead of
+                            rejecting the login
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isFieldChanged('general', [
+                            'oidc',
+                            'allowLinking',
+                          ]) && <ChangeIndicator />}
+                          <Switch
+                            checked={
+                              workingConfig.settings.general.oidc.allowLinking
+                            }
+                            onCheckedChange={(checked) =>
+                              handleSettingChange('general', {
+                                oidc: {
+                                  ...workingConfig.settings.general.oidc,
+                                  allowLinking: checked,
+                                },
+                              })
+                            }
+                            className={getFieldClasses('general', [
+                              'oidc',
+                              'allowLinking',
+                            ])}
+                          />
+                        </div>
+                      </div>
+
+                      {workingConfig.settings.general.oidc.allowLinking && (
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label>Require Verified Email</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Only link to an existing account if the provider
+                              confirms the email is verified. Disable only if
+                              you trust all accounts that may register with your
+                              provider.
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isFieldChanged('general', [
+                              'oidc',
+                              'requireEmailVerified',
+                            ]) && <ChangeIndicator />}
+                            <Switch
+                              checked={
+                                workingConfig.settings.general.oidc
+                                  .requireEmailVerified
+                              }
+                              onCheckedChange={(checked) =>
+                                handleSettingChange('general', {
+                                  oidc: {
+                                    ...workingConfig.settings.general.oidc,
+                                    requireEmailVerified: checked,
+                                  },
+                                })
+                              }
+                              className={getFieldClasses('general', [
+                                'oidc',
+                                'requireEmailVerified',
+                              ])}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>OIDC Auto-login</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Skip the login form and redirect straight to the
+                            provider. Visit <code>/auth/login?local=1</code> to
+                            reach the password login if you get locked out.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isFieldChanged('general', [
+                            'oidc',
+                            'enforceSso',
+                          ]) && <ChangeIndicator />}
+                          <Switch
+                            checked={
+                              workingConfig.settings.general.oidc.enforceSso
+                            }
+                            onCheckedChange={(checked) =>
+                              handleSettingChange('general', {
+                                oidc: {
+                                  ...workingConfig.settings.general.oidc,
+                                  enforceSso: checked,
+                                },
+                              })
+                            }
+                            className={getFieldClasses('general', [
+                              'oidc',
+                              'enforceSso',
+                            ])}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
                   <CardTitle>Credits</CardTitle>
                   <CardDescription>
                     Manage footer credits visibility

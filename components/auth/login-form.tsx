@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import { signIn } from 'next-auth/react'
 
@@ -12,18 +12,38 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+import { getOidcErrorMessage } from '@/lib/auth/oidc-error-messages'
+
 interface LoginFormProps {
   registrationsEnabled: boolean
   disabledMessage: string
+  oidcEnabled?: boolean
+  oidcButtonText?: string
 }
 
 export function LoginForm({
   registrationsEnabled,
   disabledMessage,
-}: LoginFormProps) {
+  oidcEnabled = false,
+  oidcButtonText = 'Sign in with SSO',
+}: Readonly<LoginFormProps>) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
+  const [isOidcLoading, setIsOidcLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const errorCode = searchParams.get('error')
+    if (errorCode) {
+      setError(getOidcErrorMessage(errorCode))
+    }
+  }, [searchParams])
+
+  async function onOidcSignIn() {
+    setIsOidcLoading(true)
+    await signIn('oidc', { callbackUrl: '/dashboard' })
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -130,6 +150,36 @@ export function LoginForm({
           )}
         </Button>
       </div>
+      {oidcEnabled && (
+        <div className="pt-6 space-y-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-white/10" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or
+              </span>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 font-medium"
+            disabled={isOidcLoading}
+            onClick={onOidcSignIn}
+          >
+            {isOidcLoading ? (
+              <>
+                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                Redirecting...
+              </>
+            ) : (
+              oidcButtonText
+            )}
+          </Button>
+        </div>
+      )}
     </form>
   )
 }
