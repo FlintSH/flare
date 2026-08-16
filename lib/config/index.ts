@@ -62,17 +62,19 @@ export const configSchema = z.object({
       ocr: z.object({
         enabled: z.boolean().default(true),
       }),
-      oidc: z.object({
-        enabled: z.boolean().default(false),
-        issuer: z.string().default(''),
-        clientId: z.string().default(''),
-        clientSecret: z.string().default(''),
-        buttonText: z.string().default('Sign in with SSO'),
-        autoProvision: z.boolean().default(true),
-        allowLinking: z.boolean().default(true),
-        requireEmailVerified: z.boolean().default(true),
-        enforceSso: z.boolean().default(false),
-      }).default({}),
+      oidc: z
+        .object({
+          enabled: z.boolean().default(false),
+          issuer: z.string().default(''),
+          clientId: z.string().default(''),
+          clientSecret: z.string().default(''),
+          buttonText: z.string().default('Sign in with SSO'),
+          autoProvision: z.boolean().default(true),
+          allowLinking: z.boolean().default(true),
+          requireEmailVerified: z.boolean().default(true),
+          enforceSso: z.boolean().default(false),
+        })
+        .default({}),
     }),
     appearance: z.object({
       theme: z.string(),

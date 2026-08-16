@@ -96,6 +96,7 @@ export async function resolveOidcUser(
       name: profile.name || profile.email!.split('@')[0],
       image: profile.picture,
       oidcSubject: profile.sub,
+      emailVerified: profile.email_verified === true ? new Date() : undefined,
     })
   )
 

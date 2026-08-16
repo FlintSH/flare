@@ -185,6 +185,31 @@ describe('resolveOidcUser', () => {
     )
   })
 
+  it.each([
+    { verified: true, expectDate: true },
+    { verified: false, expectDate: false },
+  ])(
+    'stamps emailVerified on auto-provisioned users iff the IdP verified it (verified=$verified)',
+    async ({ verified, expectDate }) => {
+      mocks.userFindUnique
+        .mockResolvedValueOnce(null) // oidcSubject lookup misses
+        .mockResolvedValueOnce(null) // email lookup misses
+      mocks.createUser.mockResolvedValueOnce({ ...dbUser, id: 'stamped' })
+
+      await resolveOidcUser(
+        makeProfile({ email_verified: verified }),
+        makeConfig({ autoProvision: true, requireEmailVerified: false })
+      )
+
+      const [, createUserInput] = mocks.createUser.mock.calls[0]
+      if (expectDate) {
+        expect(createUserInput.emailVerified).toBeInstanceOf(Date)
+      } else {
+        expect(createUserInput.emailVerified).toBeUndefined()
+      }
+    }
+  )
+
   it('rejects with not_provisioned when no match exists and autoProvision is disabled', async () => {
     mocks.userFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null)
 
