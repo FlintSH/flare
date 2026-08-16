@@ -72,7 +72,7 @@ export const configSchema = z.object({
         allowLinking: z.boolean().default(true),
         requireEmailVerified: z.boolean().default(true),
         enforceSso: z.boolean().default(false),
-      }),
+      }).default({}),
     }),
     appearance: z.object({
       theme: z.string(),
