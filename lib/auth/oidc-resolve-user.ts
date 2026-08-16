@@ -63,6 +63,10 @@ export async function resolveOidcUser(
     return { ok: false, reason: 'no_email' }
   }
 
+  if (config.requireEmailVerified && profile.email_verified !== true) {
+    return { ok: false, reason: 'email_unverified' }
+  }
+
   const existingByEmail = await prisma.user.findUnique({
     where: { email: profile.email },
     select: userSelect,
@@ -71,10 +75,6 @@ export async function resolveOidcUser(
   if (existingByEmail) {
     if (!config.allowLinking) {
       return { ok: false, reason: 'account_exists' }
-    }
-
-    if (config.requireEmailVerified && profile.email_verified !== true) {
-      return { ok: false, reason: 'email_unverified' }
     }
 
     const linked = await prisma.user.update({
