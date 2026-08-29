@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 
 import { hash } from 'bcryptjs'
-import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 
 import { updateConfig } from '@/lib/config'
 import { prisma } from '@/lib/database/prisma'
 import { loggers } from '@/lib/logger'
 import { rateLimit, setupLimiter } from '@/lib/security/rate-limit'
+import { createUser } from '@/lib/users/create-user'
 
 const logger = loggers.startup
 
@@ -15,13 +15,6 @@ class SetupAlreadyCompleteError extends Error {
   constructor() {
     super('Setup already completed')
   }
-}
-
-function generateUrlId() {
-  const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-  return Array.from({ length: 5 }, () => {
-    return alphabet.charAt(Math.floor(Math.random() * alphabet.length))
-  }).join('')
 }
 
 const setupSchema = z.object({
@@ -63,29 +56,12 @@ export async function POST(req: Request) {
         throw new SetupAlreadyCompleteError()
       }
 
-      let urlId = generateUrlId()
-      let isUnique = false
-      while (!isUnique) {
-        const existing = await tx.user.findUnique({
-          where: { urlId },
-        })
-        if (!existing) {
-          isUnique = true
-        } else {
-          urlId = generateUrlId()
-        }
-      }
-
-      return tx.user.create({
-        data: {
-          name: validatedData.admin.name,
-          email: validatedData.admin.email,
-          password: hashedPassword,
-          role: 'ADMIN',
-          emailVerified: new Date(),
-          urlId,
-          uploadToken: uuidv4(),
-        },
+      return createUser(tx, {
+        name: validatedData.admin.name,
+        email: validatedData.admin.email,
+        password: hashedPassword,
+        role: 'ADMIN',
+        emailVerified: new Date(),
       })
     })
 
@@ -120,6 +96,17 @@ export async function POST(req: Request) {
           },
           ocr: {
             enabled: true,
+          },
+          oidc: {
+            enabled: false,
+            issuer: '',
+            clientId: '',
+            clientSecret: '',
+            buttonText: 'Sign in with SSO',
+            autoProvision: true,
+            allowLinking: true,
+            requireEmailVerified: true,
+            enforceSso: false,
           },
         },
         appearance: {

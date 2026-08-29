@@ -1,14 +1,26 @@
 import { LoginForm } from '@/components/auth/login-form'
+import { OidcAutoRedirect } from '@/components/auth/oidc-auto-redirect'
 import { DynamicBackground } from '@/components/layout/dynamic-background'
 import { Icons } from '@/components/shared/icons'
 
+import { isOidcProviderConfigured } from '@/lib/auth'
 import { getConfig } from '@/lib/config'
 
 export const dynamic = 'force-dynamic'
 
-export default async function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{ local?: string; error?: string }>
+}
+
+export default async function LoginPage({
+  searchParams,
+}: Readonly<LoginPageProps>) {
   const config = await getConfig()
+  const { local, error } = await searchParams
   const registrationsEnabled = config.settings.general.registrations.enabled
+  const oidc = config.settings.general.oidc
+  const oidcConfigured = isOidcProviderConfigured(oidc)
+  const oidcAutoRedirect = oidcConfigured && oidc.enforceSso && local !== '1'
 
   return (
     <main className="relative min-h-[calc(100vh-57px)] overflow-hidden">
@@ -31,12 +43,21 @@ export default async function LoginPage() {
           <div className="relative rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 via-transparent to-black/5 dark:from-white/5 dark:via-transparent dark:to-black/10" />
             <div className="relative p-8">
-              <LoginForm
-                registrationsEnabled={registrationsEnabled}
-                disabledMessage={
-                  config.settings.general.registrations.disabledMessage
-                }
-              />
+              {oidcAutoRedirect ? (
+                <OidcAutoRedirect
+                  buttonText={oidc.buttonText}
+                  errorCode={error}
+                />
+              ) : (
+                <LoginForm
+                  registrationsEnabled={registrationsEnabled}
+                  disabledMessage={
+                    config.settings.general.registrations.disabledMessage
+                  }
+                  oidcEnabled={oidcConfigured}
+                  oidcButtonText={oidc.buttonText}
+                />
+              )}
             </div>
           </div>
         </div>

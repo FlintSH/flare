@@ -1,6 +1,5 @@
 import { UserResponse, UserSchema } from '@/types/dto/user'
 import { hash } from 'bcryptjs'
-import { v4 as uuidv4 } from 'uuid'
 
 import {
   HTTP_STATUS,
@@ -12,6 +11,7 @@ import { requireAdmin } from '@/lib/auth/api-auth'
 import { prisma } from '@/lib/database/prisma'
 import { loggers } from '@/lib/logger'
 import { getStorageProvider } from '@/lib/storage'
+import { createUser } from '@/lib/users/create-user'
 
 const logger = loggers.users
 
@@ -87,54 +87,30 @@ export async function POST(req: Request) {
       return apiError('User already exists', HTTP_STATUS.BAD_REQUEST)
     }
 
-    const generateUrlId = () =>
-      Array.from({ length: 5 }, () => {
-        const chars =
-          '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-        return chars.charAt(Math.floor(Math.random() * chars.length))
-      }).join('')
+    const hashedPassword = body.password
+      ? await hash(body.password, 10)
+      : undefined
 
-    let urlId = generateUrlId()
-    let isUnique = false
-    while (!isUnique) {
-      const existing = await prisma.user.findUnique({
-        where: { urlId },
-      })
-      if (!existing) {
-        isUnique = true
-      } else {
-        urlId = generateUrlId()
-      }
-    }
-
-    const user = await prisma.user.create({
-      data: {
+    const user = await prisma.$transaction((tx) =>
+      createUser(tx, {
         email: body.email,
         name: body.name,
-        password: body.password ? await hash(body.password, 10) : undefined,
+        password: hashedPassword,
         role: body.role,
-        urlId,
-        uploadToken: uuidv4(),
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        role: true,
-        urlId: true,
-        vanityId: true,
-        storageUsed: true,
-        _count: {
-          select: {
-            files: true,
-            shortenedUrls: true,
-          },
-        },
-      },
-    })
+      })
+    )
 
-    return apiResponse<UserResponse>(user)
+    return apiResponse<UserResponse>({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: user.role,
+      urlId: user.urlId,
+      vanityId: user.vanityId,
+      storageUsed: user.storageUsed,
+      _count: { files: 0, shortenedUrls: 0 },
+    })
   } catch (error) {
     logger.error('Error creating user', error as Error)
     return apiError('Internal server error', HTTP_STATUS.INTERNAL_SERVER_ERROR)

@@ -1,30 +1,18 @@
 import { NextResponse } from 'next/server'
 
 import { hash } from 'bcryptjs'
-import { nanoid } from 'nanoid'
-import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 
 import { getConfig } from '@/lib/config'
 import { prisma } from '@/lib/database/prisma'
 import { authLimiter, rateLimit } from '@/lib/security/rate-limit'
+import { createUser } from '@/lib/users/create-user'
 
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().min(2),
 })
-
-function generateUrlId() {
-  const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-  return nanoid(5)
-    .split('')
-    .map((char) => {
-      const index = Math.floor((alphabet.length * char.charCodeAt(0)) / 256)
-      return alphabet[index]
-    })
-    .join('')
-}
 
 class RegistrationConflictError extends Error {
   constructor() {
@@ -55,31 +43,10 @@ export async function POST(req: Request) {
         throw new RegistrationConflictError()
       }
 
-      let urlId = generateUrlId()
-      let isUnique = false
-      while (!isUnique) {
-        const existing = await tx.user.findUnique({
-          where: { urlId },
-        })
-        if (!existing) {
-          isUnique = true
-        } else {
-          urlId = generateUrlId()
-        }
-      }
-
-      const userCount = await tx.user.count()
-      const isFirstUser = userCount === 0
-
-      return tx.user.create({
-        data: {
-          email: body.email,
-          name: body.name,
-          password: hashedPassword,
-          urlId,
-          role: isFirstUser ? 'ADMIN' : 'USER',
-          uploadToken: uuidv4(),
-        },
+      return createUser(tx, {
+        email: body.email,
+        name: body.name,
+        password: hashedPassword,
       })
     })
 

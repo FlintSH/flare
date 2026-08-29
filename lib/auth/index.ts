@@ -3,8 +3,12 @@ import { compare } from 'bcryptjs'
 import { NextAuthOptions, Session } from 'next-auth'
 import { JWT } from 'next-auth/jwt'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import type { OAuthConfig } from 'next-auth/providers/oauth'
 
+import { getConfig } from '@/lib/config'
 import { prisma } from '@/lib/database/prisma'
+
+import { OidcProfile, resolveOidcUser } from './oidc-resolve-user'
 
 const userSelect = {
   id: true,
@@ -18,6 +22,13 @@ const userSelect = {
 
 type UserWithSession = Prisma.UserGetPayload<{ select: typeof userSelect }>
 
+const oidcErrorParams = {
+  no_email: 'OidcNoEmail',
+  account_exists: 'OidcAccountExists',
+  not_provisioned: 'OidcNotProvisioned',
+  email_unverified: 'OidcEmailUnverified',
+} as const
+
 declare module 'next-auth' {
   interface Session {
     user: {
@@ -27,6 +38,11 @@ declare module 'next-auth' {
       image: string | null
       role: UserRole
     }
+  }
+
+  interface User {
+    role?: UserRole
+    sessionVersion?: number
   }
 }
 
@@ -61,7 +77,7 @@ export const authOptions: NextAuthOptions = {
           select: userSelect,
         })
 
-        if (!user || !user.password) {
+        if (!user?.password) {
           return null
         }
 
@@ -86,6 +102,32 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider !== 'oidc') {
+        return true
+      }
+
+      const config = await getConfig()
+      const oidcConfig = config.settings.general.oidc
+      const rawProfile = profile as OidcProfile
+      const scopedProfile: OidcProfile = {
+        ...rawProfile,
+        sub: scopeOidcSubject(oidcConfig.issuer, rawProfile.sub),
+      }
+
+      const result = await resolveOidcUser(scopedProfile, {
+        autoProvision: oidcConfig.autoProvision,
+        allowLinking: oidcConfig.allowLinking,
+        requireEmailVerified: oidcConfig.requireEmailVerified,
+      })
+
+      if (!result.ok) {
+        return `/auth/login?error=${oidcErrorParams[result.reason]}`
+      }
+
+      Object.assign(user, result.user)
+      return true
+    },
     async jwt({ token, user }): Promise<JWT> {
       if (user) {
         const sessionUser = user as UserWithSession
@@ -140,4 +182,76 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60,
   },
+}
+
+function trimTrailingSlashes(value: string) {
+  let end = value.length
+  while (end > 0 && value[end - 1] === '/') {
+    end -= 1
+  }
+  return value.slice(0, end)
+}
+
+/**
+ * OIDC `sub` is only unique within its issuer, not globally, so it must be
+ * scoped before being used as a global lookup key (see oidcSubject on User).
+ */
+function scopeOidcSubject(issuer: string, sub: string): string {
+  return `${trimTrailingSlashes(issuer)}|${sub}`
+}
+
+interface OidcRawProfile extends Record<string, unknown> {
+  sub: string
+  email?: string
+  email_verified?: boolean
+  name?: string
+  picture?: string
+}
+
+interface OidcSettings {
+  enabled: boolean
+  issuer: string
+  clientId: string
+  clientSecret: string
+  buttonText: string
+}
+
+export function isOidcProviderConfigured(oidc: OidcSettings) {
+  return Boolean(
+    oidc.enabled && oidc.issuer && oidc.clientId && oidc.clientSecret
+  )
+}
+
+function buildOidcProvider(oidc: OidcSettings): OAuthConfig<OidcRawProfile> {
+  return {
+    id: 'oidc',
+    name: oidc.buttonText || 'SSO',
+    type: 'oauth',
+    wellKnown: `${trimTrailingSlashes(oidc.issuer)}/.well-known/openid-configuration`,
+    clientId: oidc.clientId,
+    clientSecret: oidc.clientSecret,
+    authorization: { params: { scope: 'openid email profile' } },
+    idToken: true,
+    checks: ['pkce', 'state'],
+    async profile(profile) {
+      return {
+        id: profile.sub,
+        name: profile.name ?? null,
+        email: profile.email ?? null,
+        image: profile.picture ?? null,
+      }
+    },
+  }
+}
+
+export async function getAuthOptions(): Promise<NextAuthOptions> {
+  const config = await getConfig()
+  const oidc = config.settings.general.oidc
+
+  const providers = [...authOptions.providers]
+  if (isOidcProviderConfigured(oidc)) {
+    providers.push(buildOidcProvider(oidc))
+  }
+
+  return { ...authOptions, providers }
 }
